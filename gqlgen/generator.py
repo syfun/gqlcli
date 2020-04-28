@@ -1,7 +1,6 @@
 from collections import defaultdict
 from typing import Dict, List, Union, cast
 
-from gql.utils import to_snake_case
 from graphql import (
     GraphQLEnumType,
     GraphQLField,
@@ -25,6 +24,8 @@ from graphql import (
     is_wrapping_type,
 )
 from graphql.pyutils.cached_property import cached_property
+
+from .utils import to_snake_case
 
 # from graphql.utilities.build_ast_schema import ASTDefinitionBuilder
 
