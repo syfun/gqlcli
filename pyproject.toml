@@ -9,7 +9,6 @@ homepage = "https://github.com/syfun"
 python = "^3.7"
 click = "^7"
 graphql-core = "^3"
-python-gql = "<0.1"
 
 
 [tool.poetry.dev-dependencies]

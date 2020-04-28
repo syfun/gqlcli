@@ -4,7 +4,7 @@ description = "Composable command line interface toolkit"
 name = "click"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-version = "7.1.1"
+version = "7.1.2"
 
 [[package]]
 category = "main"
@@ -14,49 +14,16 @@ optional = false
 python-versions = ">=3.6,<4"
 version = "3.1.0"
 
-[[package]]
-category = "main"
-description = "Python schema-first and auto-generate class graphql server"
-name = "python-gql"
-optional = false
-python-versions = ">=3.7,<4.0"
-version = "0.0.11"
-
-[package.dependencies]
-graphql-core = ">=3,<4"
-
-[package.dependencies.typing_extensions]
-python = "<3.8"
-version = ">=3.7.4,<4.0.0"
-
-[[package]]
-category = "main"
-description = "Backported and Experimental Type Hints for Python 3.5+"
-marker = "python_version < \"3.8\""
-name = "typing-extensions"
-optional = false
-python-versions = "*"
-version = "3.7.4.2"
-
 [metadata]
-content-hash = "9fc0ad76234e9695d9874c8758f51f10e9eac4682583842eb1d5115baccad953"
+content-hash = "bbca2af048382e2259d37d920bb9119f0f4e88d7db23290a0f15757c946e9cfe"
 python-versions = "^3.7"
 
 [metadata.files]
 click = [
-    {file = "click-7.1.1-py2.py3-none-any.whl", hash = "sha256:e345d143d80bf5ee7534056164e5e112ea5e22716bbb1ce727941f4c8b471b9a"},
-    {file = "click-7.1.1.tar.gz", hash = "sha256:8a18b4ea89d8820c5d0c7da8a64b2c324b4dabb695804dbfea19b9be9d88c0cc"},
+    {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},
+    {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
 ]
 graphql-core = [
     {file = "graphql-core-3.1.0.tar.gz", hash = "sha256:d43cf1f149772c7014656d4bc4c512278a16722e80e4be2daf99894ffef871db"},
     {file = "graphql_core-3.1.0-py3-none-any.whl", hash = "sha256:b654666330c46d6a98405a542e9fde0a499916428cbc11da51eb82be37ef1e05"},
-]
-python-gql = [
-    {file = "python-gql-0.0.11.tar.gz", hash = "sha256:41359e7c08673f549ead227a3fe0a1d08da23935042c9ca8ec8f5d54271afbc0"},
-    {file = "python_gql-0.0.11-py3-none-any.whl", hash = "sha256:5808e5115c7f812982a7adf99a9d222430831d8b078361ab7035e90931a8bde2"},
-]
-typing-extensions = [
-    {file = "typing_extensions-3.7.4.2-py2-none-any.whl", hash = "sha256:f8d2bd89d25bc39dabe7d23df520442fa1d8969b82544370e03d88b5a591c392"},
-    {file = "typing_extensions-3.7.4.2-py3-none-any.whl", hash = "sha256:6e95524d8a547a91e08f404ae485bbb71962de46967e1b71a0cb89af24e761c5"},
-    {file = "typing_extensions-3.7.4.2.tar.gz", hash = "sha256:79ee589a3caca649a9bfd2a8de4709837400dfa00b6cc81962a1e6a1815969ae"},
 ]
