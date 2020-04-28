@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "gqlgen"
+version = "0.0.1"
+description = "Auto-generate GraphQL Type, Resolver and Query."
+authors = ["syfun <sunyu418@gmail.com>"]
+homepage = "https://github.com/syfun"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+click = "^7"
+graphql-core = "^3"
+python-gql = "<0.1"
+
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+gqlgen = 'gqlgen.main:main'
+
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
