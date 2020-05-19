@@ -56,27 +56,28 @@ def guess_schema_file():
     default='pydantic',
     help='generate class based: none, dataclass, pydantic, default is pydantic',
 )
-@click.argument('typ')
+@click.argument('typ', nargs=-1)
 def type(ctx, typ: str, kind: str):
     """Generate one type"""
     generator = TypeGenerator(kind)
     type_map = build_schema(ctx.obj['type_defs']).type_map
-    if typ not in type_map:
-        print(f"No '{typ}' type.")
-        return
+    for t in typ:
+        if t not in type_map:
+            print(f"No '{t}' type.")
+            return
 
-    type_ = type_map[typ]
-    type_def = ''
-    if is_enum_type(type_):
-        type_def = generator.enum_type(cast(GraphQLEnumType, type_))
-    if is_object_type(type_):
-        type_def = generator.object_type(cast(GraphQLObjectType, type_))
-    if is_interface_type(type_):
-        type_def = generator.interface_type(cast(GraphQLInterfaceType, type_))
-    if is_input_object_type(type_):
-        type_def = generator.input_type(cast(GraphQLInputObjectType, type_))
+        type_ = type_map[t]
+        type_def = ''
+        if is_enum_type(type_):
+            type_def = generator.enum_type(cast(GraphQLEnumType, type_))
+        if is_object_type(type_):
+            type_def = generator.object_type(cast(GraphQLObjectType, type_))
+        if is_interface_type(type_):
+            type_def = generator.interface_type(cast(GraphQLInterfaceType, type_))
+        if is_input_object_type(type_):
+            type_def = generator.input_type(cast(GraphQLInputObjectType, type_))
 
-    print(type_def)
+        print(type_def)
 
 
 @main.command()
