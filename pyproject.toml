@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "gqlgen"
-version = "0.0.1"
+version = "0.0.3"
 description = "Auto-generate GraphQL Type, Resolver and Query."
 authors = ["syfun <sunyu418@gmail.com>"]
 homepage = "https://github.com/syfun"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.7"
 click = "^7"
-graphql-core = "^3"
+graphql-core = ">=3"
 
 
 [tool.poetry.dev-dependencies]

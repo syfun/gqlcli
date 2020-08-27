@@ -35,7 +35,7 @@ SourceType = Union[Source, str]
 SCALAR_MAP = {'String': 'Text', 'Int': 'int', 'Float': 'float', 'Boolean': 'bool'}
 
 
-def get_type_literal(type_: GraphQLType) -> str:
+def get_type_literal(type_: GraphQLType, optional: bool = False) -> str:
     """
     String! => Text
     String => Optional[Text]
@@ -60,7 +60,7 @@ def get_type_literal(type_: GraphQLType) -> str:
         value = value if is_leaf_type(type_) else f"'{value}'"
         # value = value if is_leaf_type(type_) or is_interface_type(type_) else f"'{value}'"
 
-    if is_null:
+    if optional or is_null:
         value = f'Optional[{value}]'
 
     return value
@@ -140,8 +140,8 @@ class FieldGenerator:
         return f'{to_snake_case(name)}{args_value}{return_type}'
 
     @staticmethod
-    def output_field(name: str, field: GraphQLField):
-        return_type = get_type_literal(field.type)
+    def output_field(name: str, field: GraphQLField, optional: bool = False):
+        return_type = get_type_literal(field.type, optional=optional)
         args_value = ': '
         if field.args:
             args = [
@@ -182,10 +182,11 @@ class TypeGenerator:
                 age: int
     """
 
-    def __init__(self, kind: str = 'none'):
+    def __init__(self, kind: str = 'none', optional: bool = False):
         # TODO: exception
         assert kind in ['none', 'dataclass', 'pydantic']
         self.kind = kind
+        self.optional = optional
 
     def interface_type(self, type_: GraphQLInterfaceType):
         def_ = f'\nclass {type_.name}'
@@ -211,7 +212,7 @@ class TypeGenerator:
             def_ = def_ + '(BaseModel)'
         def_ += ':\n'
         for name, field in type_.fields.items():
-            def_ += f'    {FieldGenerator.output_field(name, field)}\n'
+            def_ += f'    {FieldGenerator.output_field(name, field, optional=self.optional)}\n'
         return def_
 
     def input_type(self, type_: GraphQLInputObjectType):
@@ -226,11 +227,18 @@ class TypeGenerator:
             def_ += f'    {FieldGenerator.input_field(name, field)}\n'
         return def_
 
-    def enum_type(self, type_: GraphQLEnumType):
+    def str_enum_type(self, type_: GraphQLEnumType):
         def_ = f'\n@enum_type\nclass {type_.name}(Enum):\n'
 
-        i = 1
         for key in type_.values.keys():
-            def_ += f'   {key} = {i}\n'
+            def_ += f"   {key} = '{key}'\n"
+        return def_
+
+    def number_enum_type(self, type_: GraphQLEnumType):
+        def_ = f'\n@enum_type\nclass {type_.name}(Enum):\n'
+
+        i = 0
+        for key in type_.values.keys():
+            def_ += f"   {key} = {i}\n"
             i += 1
         return def_
