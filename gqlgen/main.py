@@ -1,4 +1,5 @@
 import os
+import json
 from typing import List, Text, Tuple, cast
 
 import click
@@ -20,6 +21,7 @@ from graphql import (
 )
 
 from .generator import FieldGenerator, TypeGenerator, TypeResolverGenerator
+from .utils import make_postman_request, make_headers
 
 
 @click.group()
@@ -56,17 +58,8 @@ def guess_schema_file():
     default='pydantic',
     help='generate class based: none, dataclass, pydantic, default is pydantic',
 )
-@click.option(
-    '--optional',
-    default=False,
-    is_flag=True,
-    help='all field optional'
-)
-@click.option(
-    '--enum',
-    default='str',
-    help='enum type: str, number, default is str'
-)
+@click.option('--optional', default=False, is_flag=True, help='all field optional')
+@click.option('--enum', default='str', help='enum type: str, number, default is str')
 @click.argument('typ', nargs=-1)
 def type(ctx, typ: str, kind: str, optional: bool, enum: str):
     """Generate one type"""
@@ -233,6 +226,17 @@ def print_field(type_: GraphQLObjectType, indent: int = 2) -> str:
     return print_block(items, indent - 2)
 
 
+def build_client(query, op, op_type):
+    operation_name = op
+    if query.args:
+        var_defs, vars = print_args(query.args)
+        operation_name += f'({", ".join(var_defs)})'
+        op += f'({", ".join(vars)})'
+    return_type = of_type(query.type)
+    fields = '  ' + op + print_field(return_type, indent=4)
+    return op_type + ' ' + operation_name + print_block([fields])
+
+
 @main.command(name='c')
 @click.pass_context
 @click.argument('op')
@@ -248,14 +252,7 @@ def client(ctx, op: str):
             print(f'No {op} query.')
             return
 
-    operation_name = op
-    if query.args:
-        var_defs, vars = print_args(query.args)
-        operation_name += f'({", ".join(var_defs)})'
-        op += f'({", ".join(vars)})'
-    return_type = of_type(query.type)
-    fields = '  ' + op + print_field(return_type, indent=4)
-    print(op_type + ' ' + operation_name + print_block([fields]))
+    print(build_client(query, op, op_type))
 
 
 @main.command(name='pt')
@@ -269,3 +266,32 @@ def print_graphql_type(ctx, type_name: str):
         print(f'No {type_name} type.')
         return
     print(print_type(type_))
+
+
+@main.command(name='postman')
+@click.argument('name')
+@click.option('--header', '-H', multiple=True)
+@click.pass_context
+def export_postman(ctx, name: str, header):
+    """Export all client query to postman."""
+    schema = build_schema(ctx.obj['type_defs'])
+    headers = make_headers(header)
+    requests = []
+    query_type, mutation_type = schema.query_type, schema.mutation_type
+    if query_type:
+        for op, field in query_type.fields.items():
+            requests.append(make_postman_request(op, build_client(field, op, 'query'), headers))
+    if mutation_type:
+        for op, field in mutation_type.fields.items():
+            requests.append(make_postman_request(op, build_client(field, op, 'mutate'), headers))
+
+    data = {
+        'info': {
+            'name': name,
+            'schema': 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+        },
+        'item': requests,
+        'protocolProfileBehavior': {},
+    }
+    with open(f'{name}.json', 'w') as f:
+        json.dump(data, f, indent=2)
