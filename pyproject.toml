@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gqlgen"
-version = "0.0.3"
+version = "0.0.4"
 description = "Auto-generate GraphQL Type, Resolver and Query."
 authors = ["syfun <sunyu418@gmail.com>"]
 homepage = "https://github.com/syfun"
