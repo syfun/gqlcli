@@ -10,7 +10,7 @@ def to_snake_case(name):
 
 def make_headers(headers: list):
     return [
-        {'key': header.split(':')[0], 'value': header.split(':')[1], 'type': 'text'}
+        {'key': header.split(':', 1)[0], 'value': header.split(':', 1)[1], 'type': 'text'}
         for header in headers
     ]
 
