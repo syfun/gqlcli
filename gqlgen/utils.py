@@ -23,7 +23,7 @@ def make_postman_request(name, query, headers):
             'header': headers,
             'body': {
                 'mode': 'graphql',
-                'graphql': {'query': query, 'variables': ''},
+                'graphql': {'query': query, 'variables': ""},
                 'options': {'graphql': {}},
             },
             'url': {

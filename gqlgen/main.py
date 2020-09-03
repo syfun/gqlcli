@@ -1,6 +1,7 @@
 import os
 import json
 from typing import List, Text, Tuple, cast
+from functools import partial
 
 import click
 from graphql import (
@@ -11,7 +12,7 @@ from graphql import (
     GraphQLOutputType,
     assert_interface_type,
     assert_object_type,
-    build_schema,
+    build_schema as _build_schema,
     is_enum_type,
     is_input_object_type,
     is_interface_type,
@@ -22,6 +23,8 @@ from graphql import (
 
 from .generator import FieldGenerator, TypeGenerator, TypeResolverGenerator
 from .utils import make_postman_request, make_headers
+
+build_schema = partial(_build_schema, assume_valid_sdl=True)
 
 
 @click.group()
@@ -207,16 +210,19 @@ def print_block(items: List[Text], indent=0) -> Text:
     return ' {\n' + '\n'.join(items) + '\n' + ' ' * indent + '}' if items else ''
 
 
-def print_field(type_: GraphQLObjectType, indent: int = 2) -> str:
+def print_field(type_: GraphQLObjectType, indent: int = 2, type_set: set = None) -> str:
     if is_scalar_type(type_):
         return ''
     items = []
     indent_space = ' ' * indent
+    type_set = type_set or set()
     for name, field in type_.fields.items():
         item = indent_space + name
         t = of_type(field.type)
-        if is_object_type(t):
-            item += print_field(t, indent + 2)
+        if t.name not in type_set:
+            type_set.add(t.name)
+            if is_object_type(t):
+                item += print_field(t, indent + 2, type_set)
         # elif is_interface_type(t):
         #     if not inner_type:
         #         raise RuntimeError(f'{t} is a interface type, must have inner type.')
@@ -240,7 +246,8 @@ def build_client(query, op, op_type):
 @main.command(name='c')
 @click.pass_context
 @click.argument('op')
-def client(ctx, op: str):
+@click.option('--type', '-T', default='normal')
+def client(ctx, op: str, type: str = 'normal'):
     """Generate client query"""
     schema = build_schema(ctx.obj['type_defs'])
     query = schema.query_type.fields.get(op)
@@ -252,7 +259,19 @@ def client(ctx, op: str):
             print(f'No {op} query.')
             return
 
-    print(build_client(query, op, op_type))
+    r = build_client(query, op, op_type)
+    if type == 'sf':
+        r = {'operationName': op, 'variables': {'file': None}, 'query': str(r)}
+        print("use form data")
+        print(f"operations: {json.dumps(r)}")
+        print("""map: {"1":["variables.file"]}""")
+    elif type == 'mf':
+        r = {'operationName': op, 'variables': {'files': [None]}, 'query': str(r)}
+        print("use form data")
+        print(f"operations: {json.dumps(r)}")
+        print("""map: {"1":["variables.files.0"]}""")
+    else:
+        print(r)
 
 
 @main.command(name='pt')
@@ -283,7 +302,7 @@ def export_postman(ctx, name: str, header):
             requests.append(make_postman_request(op, build_client(field, op, 'query'), headers))
     if mutation_type:
         for op, field in mutation_type.fields.items():
-            requests.append(make_postman_request(op, build_client(field, op, 'mutate'), headers))
+            requests.append(make_postman_request(op, build_client(field, op, 'mutation'), headers))
 
     data = {
         'info': {
