@@ -27,8 +27,8 @@ def make_postman_request(name, query, headers):
                 'options': {'graphql': {}},
             },
             'url': {
-                'raw': '{{HOST}}' + f'?{name}',
-                'host': ['{{HOST}}'],
+                'raw': '{{GRAPHQL}}' + f'?{name}',
+                'host': ['{{GRAPHQL}}'],
                 'query': [{'key': name, 'value': None}],
             },
         },
