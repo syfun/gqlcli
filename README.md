@@ -21,6 +21,7 @@ Commands:
   all  Generate all schema types
   c    Generate client query
   fr   Generate field resolver.
+  postman  Export all client query to postman.
   pt   Print type definition
   t    Generate one type
   tr   Generate type resolver
@@ -194,4 +195,14 @@ interface Character {
   friends: [Character]
   appearsIn: [Episode]
 }
+```
+
+## postman
+
+Generate a postman collection.
+
+Example:
+
+```
+gqlgen -f ./schema.graphql  postman -H X-Authenticated-Scope:authenticated -H X-Authenticated-Userid:"{\"id\": \"{{USER}}\", \"meta\": {\"company_id\": {{COMPANY}}, \"is_superuser\": {{SUPERUSER}}}}" -H Authorization:"Token {{TOKEN}}" example
 ```
