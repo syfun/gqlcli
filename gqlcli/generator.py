@@ -32,13 +32,13 @@ from .utils import to_snake_case
 TypeMap = Dict[str, GraphQLNamedType]
 SourceType = Union[Source, str]
 
-SCALAR_MAP = {'String': 'Text', 'Int': 'int', 'Float': 'float', 'Boolean': 'bool'}
+SCALAR_MAP = {'String': 'str', 'Int': 'int', 'Float': 'float', 'Boolean': 'bool'}
 
 
 def get_type_literal(type_: GraphQLType, optional: bool = False) -> str:
     """
-    String! => Text
-    String => Optional[Text]
+    String! => str
+    String => Optional[str]
     [Character!]! => ['Character']
     [Character!] => Optional['Character']
     [Character] => Optional[List[Optional['Character']]]
@@ -164,21 +164,21 @@ class TypeGenerator:
     Example:
         none:
             class Person:
-                name: Text
+                name: str
                 age: int
         dataclass:
             from dataclasses import dataclass
 
             @dataclass
             class Person:
-                name: Text
+                name: str
                 age: int
 
         pydantic:
             from pydantic import BaseModel
 
             class Person(BaseModel):
-                name: Text
+                name: str
                 age: int
     """
 

@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Text, Tuple, cast
+from typing import List, Tuple, cast
 from functools import partial
 
 import click
@@ -122,7 +122,7 @@ def all(ctx, kind: str):
     type_resolvers = TypeResolverGenerator(type_map).all_type_resolvers()
     imports, body = '', ''
 
-    body += "ID = NewType('ID', Text)\n\n"
+    body += "ID = NewType('ID', int)\n\n"
     if enum_types:
         body += '\n'.join(enum_types) + '\n'
     if interface_types:
@@ -138,7 +138,7 @@ def all(ctx, kind: str):
         imports += 'from dataclasses import dataclass\n'
     if enum_types:
         imports += 'from enum import Enum\n'
-    imports += 'from typing import Any, Dict, List, NewType, Optional, Text, Union\n\n'
+    imports += 'from typing import Any, Dict, List, NewType, Optional, Union\n\n'
     imports += 'from gql import enum_type, type_resolver\n'
     if kind == 'pydantic':
         imports += 'from pydantic import BaseModel\n'
@@ -206,7 +206,7 @@ def of_type(type_: GraphQLOutputType) -> GraphQLOutputType:
         return of_type(t)
 
 
-def print_block(items: List[Text], indent=0) -> Text:
+def print_block(items: List[str], indent=0) -> str:
     return ' {\n' + '\n'.join(items) + '\n' + ' ' * indent + '}' if items else ''
 
 

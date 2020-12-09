@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "gqlgen"
-version = "0.0.7"
+name = "gqlcli"
+version = "0.1.0"
 description = "Auto-generate GraphQL Type, Resolver and Query."
 authors = ["syfun <sunyu418@gmail.com>"]
 homepage = "https://github.com/syfun"
@@ -14,7 +14,7 @@ graphql-core = ">=3"
 [tool.poetry.dev-dependencies]
 
 [tool.poetry.scripts]
-gqlgen = 'gqlgen.main:main'
+gqlcli = 'gqlcli.main:main'
 
 
 [build-system]
