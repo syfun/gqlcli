@@ -1,17 +1,20 @@
-# gqlgen
+# gqlcli
 
 Auto-generate GraphQL Type, Resolver and Query.
 
 
 ## Installation
 
-`pip install gqlgen`
+`pip install gqlcli`
 
+## TODO
+- [ ] more rule for client command
+- [x] support schema directory
 
 ## Usage
 
 ```shell script
-Usage: gqlgen [OPTIONS] COMMAND [ARGS]...
+Usage: gqlcli [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -f, --file TEXT  graphql sdl file, file extension may be .gql or .graphql
@@ -29,7 +32,7 @@ Commands:
 
 > `-f` option will auto find sdl file with `.gql` or `.graphql` extension in current dir.
 >
-> `gqlgen -f schema.graphql` same with `gqlgen`
+> `gqlcli -p schema.graphql` same with `gqlcli`
 
 GraphQL schema example:
 
@@ -70,7 +73,7 @@ type Query {
 
 `all` command can generate all schema types, based on default class, dataclass or pydantic, default is pydantic.
 
-`gqlgen all --kind pydantic`
+`gqlcli all --kind pydantic`
 
 ```python
 from enum import Enum
@@ -127,7 +130,7 @@ def resolve_character_type(obj, info, type_):
 
 `c` command generate query string.
 
-`gqlgen c hero`
+`gqlcli c hero`
 
 ```graphql
 query hero($episode: Episode) {
@@ -144,7 +147,7 @@ query hero($episode: Episode) {
 
 `fr` command generate field resolver.
 
-`gqlgen fr Query hero`
+`gqlcli fr Query hero`
 
 ```python
 @query
@@ -156,7 +159,7 @@ def hero(parent, info, episode: Optional[Episode]) -> Optional['Character']:
 
 `tr` command generate type resolver.
 
-`gqlgen tr Character`
+`gqlcli tr Character`
 
 ```python
 @type_resolver('Character')
@@ -172,7 +175,7 @@ def resolve_character_type(obj, info, type_):
 
 `t` command generate given type.
 
-`gqlgen c Character`
+`gqlcli c Character`
 
 ```python
 class Character(BaseModel):
@@ -186,7 +189,7 @@ class Character(BaseModel):
 
 `pt` command print type definition.
 
-`gqlgen pt Character`
+`gqlcli pt Character`
 
 ```graphql
 interface Character {
@@ -204,5 +207,5 @@ Generate a postman collection.
 Example:
 
 ```
-gqlgen -f ./schema.graphql  postman -H X-Authenticated-Scope:authenticated -H X-Authenticated-Userid:"{\"id\": \"{{USER}}\", \"meta\": {\"company_id\": {{COMPANY}}, \"is_superuser\": {{SUPERUSER}}}}" -H Authorization:"Token {{TOKEN}}" example
+gqlcli -p ./schema.graphql  postman -H X-Authenticated-Scope:authenticated -H X-Authenticated-Userid:"{\"id\": \"{{USER}}\", \"meta\": {\"company_id\": {{COMPANY}}, \"is_superuser\": {{SUPERUSER}}}}" -H Authorization:"Token {{TOKEN}}" example
 ```
