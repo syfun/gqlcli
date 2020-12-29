@@ -1,9 +1,10 @@
-import os
 import json
-from typing import List, Tuple, cast
 from functools import partial
+from pathlib import Path
+from typing import List, Tuple, cast
 
 import click
+from gql import make_schema_from_path
 from graphql import (
     GraphQLEnumType,
     GraphQLInputObjectType,
@@ -28,30 +29,40 @@ build_schema = partial(_build_schema, assume_valid_sdl=True)
 
 
 @click.group()
-@click.option('-f', '--file', help='graphql sdl file, file extension may be .gql or .graphql')
+@click.option(
+    '-p',
+    '--path',
+    help='graphql sdl path, support directory and file.'
+    'schema extension must be .graphql.'
+    'if not present, auto find "schema" directory and "schema.graphql"',
+)
 @click.pass_context
-def main(ctx, file):
+def main(ctx, path):
     # ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below)
     ctx.ensure_object(dict)
 
-    if not file:
-        file = guess_schema_file()
-    if not file:
-        print("Must has 'file' argument or has a graphql sdl file which endswith .gql or .graphql.")
+    current_dir = Path('.')
+
+    if not path:
+        directory = current_dir / 'schema'
+        file = Path('.') / f'schema.graphql'
+    else:
+        directory = current_dir / path
+        file = current_dir / f'{path}'
+
+    if file.exists() and file.is_file():
+        ctx.obj['schema'] = make_schema_from_path(file, assume_valid=True)
         return
-    with open(file, 'r') as f:
-        ctx.obj['type_defs'] = f.read()
 
+    if directory.exists() and directory.is_dir():
+        ctx.obj['schema'] = make_schema_from_path(directory, assume_valid=True)
+        return
 
-def guess_schema_file():
-    files = os.listdir(os.path.curdir)
-    for f in files:
-        if os.path.isdir(f):
-            continue
-        if f.endswith('.gql') or f.endswith('.graphql'):
-            return f
-    return None
+    print(
+        "Must has 'path' argument or has a graphql sdl file schema.graphql "
+        "or has a schema directory"
+    )
 
 
 @main.command(name='t')
@@ -67,7 +78,7 @@ def guess_schema_file():
 def type(ctx, typ: str, kind: str, optional: bool, enum: str):
     """Generate one type"""
     generator = TypeGenerator(kind, optional=optional)
-    type_map = build_schema(ctx.obj['type_defs']).type_map
+    type_map = ctx.obj['schema'].type_map
     for t in typ:
         if t not in type_map:
             print(f"No '{t}' type.")
@@ -106,7 +117,7 @@ def all(ctx, kind: str):
     generator = TypeGenerator(kind)
 
     enum_types, interface_types, object_types, input_types = [], [], [], []
-    type_map = build_schema(ctx.obj['type_defs']).type_map
+    type_map = ctx.obj['schema'].type_map
     for name, type_ in type_map.items():
         if name in ['Query', 'Mutation'] or name.startswith('__'):
             continue
@@ -153,7 +164,7 @@ def all(ctx, kind: str):
 @click.argument('field')
 def field_resolver(ctx, type: str, field: str):
     """Generate field resolver."""
-    schema = build_schema(ctx.obj['type_defs'])
+    schema = ctx.obj['schema']
     type_ = schema.get_type(type)
     if is_object_type(type_):
         type_ = assert_object_type(type_)
@@ -185,7 +196,7 @@ def field_resolver(ctx, type: str, field: str):
 @click.argument('type_name')
 def type_resolver(ctx, type_name: str):
     """Generate type resolver"""
-    generator = TypeResolverGenerator(build_schema(ctx.obj['type_defs']).type_map)
+    generator = TypeResolverGenerator(ctx.obj['schema'].type_map)
     print(generator.type_resolver(type_name))
 
 
@@ -249,7 +260,7 @@ def build_client(query, op, op_type):
 @click.option('--type', '-T', default='normal')
 def client(ctx, op: str, type: str = 'normal'):
     """Generate client query"""
-    schema = build_schema(ctx.obj['type_defs'])
+    schema = ctx.obj['schema']
     query = schema.query_type.fields.get(op)
     op_type = 'query'
     if not query:
@@ -279,7 +290,7 @@ def client(ctx, op: str, type: str = 'normal'):
 @click.argument('type_name')
 def print_graphql_type(ctx, type_name: str):
     """Print type definition"""
-    schema = build_schema(ctx.obj['type_defs'])
+    schema = ctx.obj['schema']
     type_ = schema.get_type(type_name)
     if not type_:
         print(f'No {type_name} type.')
@@ -293,7 +304,7 @@ def print_graphql_type(ctx, type_name: str):
 @click.pass_context
 def export_postman(ctx, name: str, header):
     """Export all client query to postman."""
-    schema = build_schema(ctx.obj['type_defs'])
+    schema = ctx.obj['schema']
     headers = make_headers(header)
     requests = []
     query_type, mutation_type = schema.query_type, schema.mutation_type
