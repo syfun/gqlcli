@@ -2,8 +2,10 @@ import json
 from functools import partial
 from pathlib import Path
 from typing import List, Tuple, cast
+from urllib.parse import urljoin
 
 import click
+import requests
 from gql import make_schema_from_path
 from graphql import (
     GraphQLEnumType,
@@ -20,6 +22,7 @@ from graphql import (
     is_object_type,
     is_scalar_type,
     print_type,
+    print_schema,
 )
 
 from .generator import FieldGenerator, TypeGenerator, TypeResolverGenerator
@@ -122,7 +125,7 @@ def all(ctx, kind: str):
         if name in ['Query', 'Mutation'] or name.startswith('__'):
             continue
         elif is_enum_type(type_):
-            enum_types.append(generator.enum_type(cast(GraphQLEnumType, type_)))
+            enum_types.append(generator.str_enum_type(cast(GraphQLEnumType, type_)))
         elif is_object_type(type_):
             object_types.append(generator.object_type(cast(GraphQLObjectType, type_)))
         elif is_interface_type(type_):
@@ -133,7 +136,6 @@ def all(ctx, kind: str):
     type_resolvers = TypeResolverGenerator(type_map).all_type_resolvers()
     imports, body = '', ''
 
-    body += "ID = NewType('ID', int)\n\n"
     if enum_types:
         body += '\n'.join(enum_types) + '\n'
     if interface_types:
@@ -325,3 +327,31 @@ def export_postman(ctx, name: str, header):
     }
     with open(f'{name}.json', 'w') as f:
         json.dump(data, f, indent=2)
+
+
+@main.command('sync')
+@click.argument('name')
+@click.argument('version')
+@click.option('--user', '-U', default='teletraan')
+@click.option('--password', '-P', default='teletraan')
+@click.option('--host', '-H', default='https://graphql.teletraan.io')
+@click.pass_context
+def sync_schema(
+    ctx,
+    name: str,
+    version: str,
+    user: str = 'teletraan',
+    password: str = 'teletraan',
+    host: str = 'https://graphql.teletraan.io',
+):
+    """Sync schema sdl to Graphql Studio"""
+    schema = ctx.obj['schema']
+
+    url = urljoin(host, f'/api/services/{name}/versions')
+    resp = requests.put(
+        url, auth=(user, password), json=dict(version=version, sdl=print_schema(schema))
+    )
+    if not resp.ok:
+        print(resp.content)
+    else:
+        print('sync schema success')

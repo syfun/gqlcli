@@ -32,7 +32,7 @@ from .utils import to_snake_case
 TypeMap = Dict[str, GraphQLNamedType]
 SourceType = Union[Source, str]
 
-SCALAR_MAP = {'String': 'str', 'Int': 'int', 'Float': 'float', 'Boolean': 'bool'}
+SCALAR_MAP = {'String': 'str', 'Int': 'int', 'Float': 'float', 'Boolean': 'bool', 'ID': 'int'}
 
 
 def get_type_literal(type_: GraphQLType, optional: bool = False) -> str:
@@ -231,7 +231,7 @@ class TypeGenerator:
         def_ = f'\n@enum_type\nclass {type_.name}(Enum):\n'
 
         for key in type_.values.keys():
-            def_ += f"   {key} = '{key}'\n"
+            def_ += f"    {key} = '{key}'\n"
         return def_
 
     def number_enum_type(self, type_: GraphQLEnumType):
