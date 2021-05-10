@@ -354,4 +354,4 @@ def sync_schema(
     if not resp.ok:
         print(resp.content)
     else:
-        print('sync schema success')
+        print(urljoin(host, f'/api/services/{name}/versions/{version}/graphql'))
