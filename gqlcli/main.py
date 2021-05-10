@@ -355,3 +355,31 @@ def sync_schema(
         print(resp.content)
     else:
         print(urljoin(host, f'/api/services/{name}/versions/{version}/graphql'))
+
+@main.command('syncfile')
+@click.argument('name')
+@click.argument('version')
+@click.argument('file')
+@click.option('--user', '-U', default='teletraan')
+@click.option('--password', '-P', default='teletraan')
+@click.option('--host', '-H', default='https://graphql.teletraan.io')
+def sync_schema_from_file(
+    name: str,
+    version: str,
+    file: str,
+    user: str = 'teletraan',
+    password: str = 'teletraan',
+    host: str = 'https://graphql.teletraan.io',
+):
+    """Sync schema sdl from file to Graphql Studio"""
+    with open(file, 'r') as f:
+        sdl = f.read()
+
+    url = urljoin(host, f'/api/services/{name}/versions')
+    resp = requests.put(
+        url, auth=(user, password), json=dict(version=version, sdl=sdl)
+    )
+    if not resp.ok:
+        print(resp.content)
+    else:
+        print(urljoin(host, f'/api/services/{name}/versions/{version}/graphql'))
