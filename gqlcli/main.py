@@ -6,7 +6,6 @@ from urllib.parse import urljoin
 
 import click
 import requests
-from gql import make_schema_from_path
 from graphql import (
     GraphQLEnumType,
     GraphQLInputObjectType,
@@ -26,6 +25,7 @@ from graphql import (
 )
 
 from .generator import FieldGenerator, TypeGenerator, TypeResolverGenerator
+from .make_schema import make_schema_from_path
 from .utils import make_postman_request, make_headers
 
 build_schema = partial(_build_schema, assume_valid_sdl=True)
@@ -356,6 +356,7 @@ def sync_schema(
     else:
         print(urljoin(host, f'/api/services/{name}/versions/{version}/graphql'))
 
+
 @main.command('syncfile')
 @click.argument('name')
 @click.argument('version')
@@ -376,10 +377,23 @@ def sync_schema_from_file(
         sdl = f.read()
 
     url = urljoin(host, f'/api/services/{name}/versions')
-    resp = requests.put(
-        url, auth=(user, password), json=dict(version=version, sdl=sdl)
-    )
+    resp = requests.put(url, auth=(user, password), json=dict(version=version, sdl=sdl))
     if not resp.ok:
         print(resp.content)
     else:
         print(urljoin(host, f'/api/services/{name}/versions/{version}/graphql'))
+
+
+@main.command('s')
+@click.pass_context
+@click.option('--host', '-H', default='localhost')
+@click.option('--port', '-P', default=5600)
+def serve(ctx, host: str = 'localhost', port: int = 5600):
+    """Serve GraphQL Playground."""
+    schema = ctx.obj['schema']
+
+    from waitress import serve
+    from .playground import PlaygroundServer
+
+    print(f'🚀️Serving GraphQL Playground on http://{host}:{port}.')
+    serve(PlaygroundServer(schema), host=host, port=port)

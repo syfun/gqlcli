@@ -1,17 +1,16 @@
 [tool.poetry]
 name = "gqlcli"
-version = "0.3.2"
+version = "0.4.0"
 description = "Auto-generate GraphQL Type, Resolver and Query."
 authors = ["syfun <sunyu418@gmail.com>"]
 homepage = "https://github.com/syfun"
 
 [tool.poetry.dependencies]
-python = ">=3.7"
+python = ">=3.8"
 click = "^7"
 graphql-core = ">=3"
-python-gql = ">=0.2.3"
 requests = "^2.25.1"
-
+waitress = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 
