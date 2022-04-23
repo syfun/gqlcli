@@ -46,7 +46,11 @@ def make_schema(
 
         type_defs = join_type_defs([type_defs, federation_service_type_defs])
         schema = build_schema(
-            type_defs, assume_valid, assume_valid_sdl, no_location, experimental_fragment_variables
+            type_defs,
+            assume_valid,
+            assume_valid_sdl,
+            no_location,
+            experimental_fragment_variables,
         )
         entity_types = get_entity_types(schema)
         if entity_types:
@@ -70,7 +74,11 @@ def make_schema(
             query_type.fields["_service"].resolve = lambda _service, info: {"sdl": sdl}
     else:
         schema = build_schema(
-            type_defs, assume_valid, assume_valid_sdl, no_location, experimental_fragment_variables
+            type_defs,
+            assume_valid,
+            assume_valid_sdl,
+            no_location,
+            experimental_fragment_variables,
         )
 
     if directives:
@@ -87,7 +95,7 @@ def make_schema_from_file(
     federation: bool = False,
     directives: Dict[str, Type[SchemaDirectiveVisitor]] = None,
 ) -> GraphQLSchema:
-    with open(file, 'r') as f:
+    with open(file, "r") as f:
         schema = make_schema(
             f.read(),
             assume_valid,
@@ -101,7 +109,7 @@ def make_schema_from_file(
 
 
 def parse_from_file(file: Path):
-    with file.open('r') as f:
+    with file.open("r") as f:
         type_defs = f.read()
         parse(type_defs)
         return type_defs
@@ -127,10 +135,10 @@ def make_schema_from_path(
         type_defs = parse_from_file(p)
     elif p.is_dir():
         type_defs = [base_type_defs]
-        for file in p.glob('*.graphql'):
+        for file in p.glob("**/*.graphql"):
             type_defs.extend([parse_from_file(file)])
     else:
-        raise RuntimeError('path: expect a file or directory!')
+        raise RuntimeError("path: expect a file or directory!")
 
     return make_schema(
         type_defs,
