@@ -109,8 +109,18 @@ def make_schema_from_file(
 
 
 def parse_from_file(file: Path):
+    if file.name.startswith("_"):
+        return ""
+    type_defs = []
     with file.open("r") as f:
-        type_defs = f.read()
+
+        for line in f.readlines():
+            line = line.lstrip()
+            if line.startswith("#"):
+                continue
+            type_defs.append(line)
+
+        type_defs = "".join(type_defs)
         parse(type_defs)
         return type_defs
 
@@ -136,7 +146,9 @@ def make_schema_from_path(
     elif p.is_dir():
         type_defs = [base_type_defs]
         for file in p.glob("**/*.graphql"):
-            type_defs.extend([parse_from_file(file)])
+            type_def = parse_from_file(file)
+            if type_def:
+                type_defs.append(type_def)
     else:
         raise RuntimeError("path: expect a file or directory!")
 
