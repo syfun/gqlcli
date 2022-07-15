@@ -7,7 +7,7 @@ homepage = "https://github.com/syfun"
 
 [tool.poetry.dependencies]
 python = ">=3.8"
-click = "^7"
+click = "^8"
 graphql-core = ">=3"
 requests = "^2.25.1"
 waitress = "^2.0.0"
