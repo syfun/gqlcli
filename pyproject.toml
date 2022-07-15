@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gqlcli"
-version = "0.5.1"
+version = "0.5.2"
 description = "Auto-generate GraphQL Type, Resolver and Query."
 authors = ["syfun <sunyu418@gmail.com>"]
 homepage = "https://github.com/syfun"
