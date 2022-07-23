@@ -220,9 +220,9 @@ def client(ctx, op: str):
     pyclip.copy(result)
 
 
-@main.command(name="ci")
+@main.command(name="i")
 @click.pass_context
-def client_interactive(ctx):
+def interactive(ctx):
     """Interactive mode."""
     schema: GraphQLSchema = ctx.obj["schema"]
 

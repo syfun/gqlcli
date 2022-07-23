@@ -1,4 +1,5 @@
 import pyclip
+from graphql import GraphQLSchema, print_type
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.document import Document
@@ -12,12 +13,15 @@ from .print import print_query
 
 help_text = """
 Type any mutation or query field to generate a query.
+Or type name to show.
 Press Control-C to exit.
 """
 
 
-def make_app(schema):
-    fields = list(schema.query_type.fields.keys()) + list(schema.mutation_type.fields.keys())
+def make_app(schema: GraphQLSchema):
+    fields = (
+        list(schema.query_type.fields.keys()) + list(schema.mutation_type.fields.keys()) + list(schema.type_map.keys())
+    )
     completer = WordCompleter(fields)
 
     output_field = TextArea(style="class:output-field", text=help_text)
@@ -54,7 +58,11 @@ def make_app(schema):
     #       custom ENTER key binding. This will automatically reset the input
     #       field and add the strings to the history.
     def accept(buff):
-        output = print_query(schema, input_field.text)
+        type_for_field = input_field.text
+        if type_for_field in schema.type_map:
+            output = print_type(schema.type_map[type_for_field])
+        else:
+            output = print_query(schema, type_for_field)
 
         pyclip.copy(output)
 
