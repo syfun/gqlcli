@@ -1,1 +1,5 @@
-__version__ = "0.5.2"
+"""
+GraphQL Client for CLI.
+"""
+
+__version__ = "0.6.1"

@@ -1,33 +1,27 @@
-import json
 from functools import partial
 from pathlib import Path
-from typing import List, Tuple, cast
+from typing import cast
 
 import click
+import pyclip
 import requests
 from graphql import (
-    GraphQLSchema,
     GraphQLEnumType,
     GraphQLInputObjectType,
     GraphQLInterfaceType,
     GraphQLObjectType,
-    GraphQLOutputType,
+    GraphQLSchema,
     assert_interface_type,
     assert_object_type,
-    build_schema as _build_schema,
-    is_enum_type,
-    is_input_object_type,
-    is_interface_type,
-    is_object_type,
-    is_scalar_type,
-    print_type,
 )
-from graphql.utilities import get_introspection_query, build_client_schema
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter
+from graphql import build_schema as _build_schema
+from graphql import is_enum_type, is_input_object_type, is_interface_type, is_object_type, print_type
+from graphql.utilities import build_client_schema, get_introspection_query
 
 from .generator import FieldGenerator, TypeGenerator, TypeResolverGenerator
+from .interactive import make_app
 from .make_schema import make_schema_from_path
+from .print import print_query
 
 build_schema = partial(_build_schema, assume_valid_sdl=True)
 
@@ -65,7 +59,7 @@ def main(ctx, path, host):
 
     if not path:
         directory = current_dir / "schema"
-        file = Path(".") / f"schema.graphql"
+        file = Path(".") / "schema.graphql"
     else:
         directory = current_dir / path
         file = current_dir / f"{path}"
@@ -78,10 +72,7 @@ def main(ctx, path, host):
         ctx.obj["schema"] = make_schema_from_path(directory, assume_valid=True)
         return
 
-    print(
-        "Must has 'path' argument or has a graphql sdl file schema.graphql "
-        "or has a schema directory"
-    )
+    print("Must has 'path' argument or has a graphql sdl file schema.graphql " "or has a schema directory")
 
 
 @main.command(name="t")
@@ -145,13 +136,9 @@ def all(ctx, kind: str):
         elif is_object_type(type_):
             object_types.append(generator.object_type(cast(GraphQLObjectType, type_)))
         elif is_interface_type(type_):
-            interface_types.append(
-                generator.interface_type(cast(GraphQLInterfaceType, type_))
-            )
+            interface_types.append(generator.interface_type(cast(GraphQLInterfaceType, type_)))
         elif is_input_object_type(type_):
-            input_types.append(
-                generator.input_type(cast(GraphQLInputObjectType, type_))
-            )
+            input_types.append(generator.input_type(cast(GraphQLInputObjectType, type_)))
 
     type_resolvers = TypeResolverGenerator(type_map).all_type_resolvers()
     imports, body = "", ""
@@ -202,11 +189,11 @@ def field_resolver(ctx, type: str, field: str):
         return
 
     if type == "Query":
-        output = f"@query\ndef "
+        output = "@query\ndef "
     elif type == "Mutation":
-        output = f"@mutate\ndef "
+        output = "@mutate\ndef "
     elif type == "Subscription":
-        output = f"@subscribe\ndef "
+        output = "@subscribe\ndef "
     else:
         output = f"@field_resolver('{type}', '{field}')\ndef "
     output += FieldGenerator.resolver_field(field, field_) + ":\n    pass\n"
@@ -222,107 +209,25 @@ def type_resolver(ctx, type_name: str):
     print(generator.type_resolver(type_name))
 
 
-def print_args(args) -> Tuple[list, list]:
-    var_defs, vars = [], []
-    for name, argument in args.items():
-        var_defs.append(f"${name}: {argument.type}")
-        vars.append(f"{name}: ${name}")
-    return var_defs, vars
-
-
-def of_type(type_: GraphQLOutputType) -> GraphQLOutputType:
-    try:
-        t = type_.of_type
-    except AttributeError:
-        return type_
-    else:
-        return of_type(t)
-
-
-def print_block(items: List[str], indent=0) -> str:
-    return " {\n" + "\n".join(items) + "\n" + " " * indent + "}" if items else ""
-
-
-def print_field(type_: GraphQLObjectType, indent: int = 2, type_set: set = None) -> str:
-    if is_scalar_type(type_):
-        return ""
-    items = []
-    indent_space = " " * indent
-    type_set = type_set or set()
-    for name, field in type_.fields.items():
-        item = indent_space + name
-        t = of_type(field.type)
-        if t.name not in type_set:
-            type_set.add(t.name)
-            if is_object_type(t):
-                item += print_field(t, indent + 2, type_set)
-        # elif is_interface_type(t):
-        #     if not inner_type:
-        #         raise RuntimeError(f'{t} is a interface type, must have inner type.')
-        #     item_ = f'{" " * (indent+2)}... on {inner_type.name}{print_field(inner_type, indent+4)}'
-        #     item += print_block([item_], indent)
-        items.append(item)
-    return print_block(items, indent - 2)
-
-
-def build_client(query, op, op_type):
-    operation_name = op
-    if query.args:
-        var_defs, vars = print_args(query.args)
-        operation_name += f'({", ".join(var_defs)})'
-        op += f'({", ".join(vars)})'
-    return_type = of_type(query.type)
-    fields = "  " + op + print_field(return_type, indent=4)
-    return op_type + " " + operation_name + print_block([fields])
-
-
 @main.command(name="c")
 @click.pass_context
 @click.argument("op")
 def client(ctx, op: str):
     """Generate client query"""
     schema: GraphQLSchema = ctx.obj["schema"]
-    print_query(schema, op)
+    result = print_query(schema, op)
+    print(result)
+    pyclip.copy(result)
 
 
 @main.command(name="ci")
 @click.pass_context
 def client_interactive(ctx):
-    """Generate client query interactive mode."""
+    """Interactive mode."""
     schema: GraphQLSchema = ctx.obj["schema"]
 
-    query_type = prompt("query type > ", completer=WordCompleter(["query", "mutation"]))
-    if query_type == "query":
-        completer = WordCompleter(list(schema.query_type.fields.keys()))
-    else:
-        completer = WordCompleter(list(schema.mutation_type.fields.keys()))
-    op = prompt("field > ", completer=completer, complete_while_typing=True)
-    print_query(schema, op)
-
-
-def print_query(schema, op: str):
-    query = schema.query_type.fields.get(op)
-    op_type = "query"
-    if not query:
-        query = schema.mutation_type.fields.get(op)
-        op_type = "mutation"
-        if not query:
-            print(f"No {op} query.")
-            return
-
-    r = build_client(query, op, op_type)
-    if type == "sf":
-        r = {"operationName": op, "variables": {"file": None}, "query": str(r)}
-        print("use form data")
-        print(f"operations: {json.dumps(r)}")
-        print("""map: {"1":["variables.file"]}""")
-    elif type == "mf":
-        r = {"operationName": op, "variables": {"files": [None]}, "query": str(r)}
-        print("use form data")
-        print(f"operations: {json.dumps(r)}")
-        print("""map: {"1":["variables.files.0"]}""")
-    else:
-        print(r)
+    app = make_app(schema)
+    app.run()
 
 
 @main.command(name="pt")
