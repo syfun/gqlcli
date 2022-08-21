@@ -1,14 +1,15 @@
 import pyclip
 from graphql import GraphQLSchema, print_type
 from prompt_toolkit.application import Application
-from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.completion import NestedCompleter, WordCompleter
 from prompt_toolkit.document import Document
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import Float, FloatContainer, HSplit, Window
+from prompt_toolkit.layout.containers import Float, FloatContainer, HSplit
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.layout.menus import CompletionsMenu
-from prompt_toolkit.widgets import TextArea
+from prompt_toolkit.widgets import HorizontalLine, TextArea
 
+from .fake import fake_variable
 from .print import print_query
 
 help_text = """
@@ -19,17 +20,22 @@ Press Control-C to exit.
 
 
 def make_app(schema: GraphQLSchema):
-    fields = (
-        list(schema.query_type.fields.keys()) + list(schema.mutation_type.fields.keys()) + list(schema.type_map.keys())
+    fields_completer = WordCompleter(list(schema.query_type.fields.keys()) + list(schema.mutation_type.fields.keys()))
+    completer = NestedCompleter.from_nested_dict(
+        {
+            "client": fields_completer,
+            "fakeVariable": fields_completer,
+            "type": WordCompleter(list(schema.type_map.keys())),
+            "exit": None,
+        }
     )
-    completer = WordCompleter(fields)
 
     output_field = TextArea(style="class:output-field", text=help_text)
     input_field = TextArea(
         prompt=">>> ",
-        style="class:input-field",
+        # style="class:input-field",
         multiline=False,
-        wrap_lines=False,
+        # wrap_lines=False,
         completer=completer,
         complete_while_typing=True,
     )
@@ -38,7 +44,7 @@ def make_app(schema: GraphQLSchema):
         content=HSplit(
             [
                 input_field,
-                Window(height=1, char="-", style="class:line"),
+                HorizontalLine(),
                 output_field,
             ]
         ),
@@ -58,18 +64,28 @@ def make_app(schema: GraphQLSchema):
     #       custom ENTER key binding. This will automatically reset the input
     #       field and add the strings to the history.
     def accept(buff):
-        type_for_field = input_field.text
-        if type_for_field in schema.type_map:
-            output = print_type(schema.type_map[type_for_field])
+        command, value = input_field.text.split(" ")
+
+        if command == "client":
+            output = print_query(schema, value)
+        elif command == "fakeVariable":
+            field = schema.query_type.fields.get(value)
+            if not field:
+                field = schema.mutation_type.fields.get(value)
+            output = fake_variable(field)
+        elif command == "type":
+            output = print_type(schema.type_map[value])
         else:
-            output = print_query(schema, type_for_field)
+            output = input_field.text
 
         pyclip.copy(output)
 
-        new_text = output_field.text + "\n" + output
+        new_output_text = output_field.text + "\n" + output
+        new_input_text = input_field.text + "\n" + ">>> "
 
         # Add text to output buffer.
-        output_field.buffer.document = Document(text=new_text, cursor_position=len(new_text))
+        output_field.buffer.document = Document(text=new_output_text, cursor_position=len(new_output_text))
+        input_field.buffer.document = Document(text=new_input_text, cursor_position=len(new_input_text))
 
     input_field.accept_handler = accept
 
