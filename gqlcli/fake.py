@@ -61,7 +61,7 @@ def fake_scalar_type(type_: GraphQLScalarType) -> Any:
 
 
 def fake_enum_type(type_: GraphQLEnumType) -> Any:
-    return random.choice(list(type_.values.values()))
+    return random.choice([value.value for value in type_.values.values()])
 
 
 def fake_input_object_type(type_: GraphQLInputObjectType) -> Any:
